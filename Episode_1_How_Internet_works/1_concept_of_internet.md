@@ -10,4 +10,5 @@
 - **Decentralization**: No single entity owns or controls the entire Internet; it functions as a collaborative effort.
 - **Evolution**: Transformed from a text-based academic resource to a multimedia platform powering global commerce, communication, and entertainment.
 - **Significance**: Represents one of humanity's most transformative technological achievements, fundamentally altering how we access information and communicate.
+- **ARPANET** : ARPANET stands for Advanced Research Projects Agency NET. ARPANET was the first network that consisted of distributed control. It was the first to implement TCP/IP protocols
 
