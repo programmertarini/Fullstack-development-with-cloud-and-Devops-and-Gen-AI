@@ -1,24 +1,41 @@
-Comparison of TCP and UDP Performance
-Performance Metrics Comparison
-MetricTCPUDPWinnerLatencyHigher (handshake + acks)Lower (immediate send)UDPThroughputLower (overhead)Higher (minimal overhead)UDPReliability100% guaranteedNo guaranteeTCPBandwidth UsageHigher (retransmissions)Lower (send once)UDPCPU UsageHigher (state management)Lower (stateless)UDPMemory UsageHigher (buffers, state)Lower (minimal state)UDPPacket Loss HandlingAutomatic retransmissionApplication's responsibilityTCPOrder GuaranteeAlways in orderNo order guaranteeTCP
-Real-World Performance Scenarios
-Scenario 1: Video Streaming
-Network Conditions: 5% packet loss, 50ms latency
-TCP Behavior:
+# Comparison of TCP and UDP Performance
 
-Detects packet loss after timeout
-Retransmits missing packet
-Blocks subsequent packets (head-of-line blocking)
-Result: Buffering, stuttering video
+## Performance Metrics Comparison
 
-UDP Behavior:
+| Metric | TCP | UDP | Winner |
+|--------|-----|-----|--------|
+| **Latency** | Higher (handshake + acks) | Lower (immediate send) | UDP |
+| **Throughput** | Lower (overhead) | Higher (minimal overhead) | UDP |
+| **Reliability** | 100% guaranteed | No guarantee | TCP |
+| **Bandwidth Usage** | Higher (retransmissions) | Lower (send once) | UDP |
+| **CPU Usage** | Higher (state management) | Lower (stateless) | UDP |
+| **Memory Usage** | Higher (buffers, state) | Lower (minimal state) | UDP |
+| **Packet Loss Handling** | Automatic retransmission | Application's responsibility | TCP |
+| **Order Guarantee** | Always in order | No order guarantee | TCP |
 
-Lost packet simply doesn't arrive
-Subsequent packets continue arriving
-Result: Momentary quality drop, but playback continues smoothly
+---
 
-Developer Insight:
-javascript// Video streaming with UDP
+## Real-World Performance Scenarios
+
+### Scenario 1: Video Streaming
+
+**Network Conditions:** 5% packet loss, 50ms latency
+
+**TCP Behavior:**
+- Detects packet loss after timeout
+- Retransmits missing packet
+- Blocks subsequent packets (head-of-line blocking)
+- **Result:** Buffering, stuttering video
+
+**UDP Behavior:**
+- Lost packet simply doesn't arrive
+- Subsequent packets continue arriving
+- **Result:** Momentary quality drop, but playback continues smoothly
+
+**Developer Insight:**
+
+```javascript
+// Video streaming with UDP
 // Application handles packet loss at codec level
 class VideoStreamHandler {
   handlePacket(packet) {
@@ -31,32 +48,53 @@ class VideoStreamHandler {
     this.expectedSequence++;
   }
 }
-Scenario 2: Gaming - Player Movement
-Network Conditions: 100ms latency, 2% packet loss
-Why UDP Wins:
+```
+
+---
+
+### Scenario 2: Gaming - Player Movement
+
+**Network Conditions:** 100ms latency, 2% packet loss
+
+**Why UDP Wins:**
+
+```
 Time: 0ms    - Player moves right (UDP sends position update)
 Time: 50ms   - Packet lost in network
 Time: 100ms  - Next position update sent (player moved further right)
 Time: 150ms  - Server receives second update, renders player at current position
-Result: Smooth gameplay, one position update lost but imperceptible
-If TCP was used:
+```
+
+**Result:** Smooth gameplay, one position update lost but imperceptible
+
+**If TCP was used:**
+
+```
 Time: 0ms    - Player moves right (TCP sends position)
 Time: 50ms   - Packet lost in network
 Time: 150ms  - TCP times out, retransmits first position
 Time: 200ms  - First position arrives (now 200ms old)
 Time: 200ms  - Second position arrives
 Time: 200ms  - Third position arrives (all queued)
-Result: Laggy movement, player "teleports" as old packets arrive
-Scenario 3: File Download
-Network Conditions: Stable connection, 1% packet loss
-Why TCP Wins:
+```
 
-File integrity is critical (missing 1% means corrupted file)
-No time sensitivity (few seconds delay acceptable)
-TCP automatically handles retransmissions
+**Result:** Laggy movement, player "teleports" as old packets arrive
 
-Developer Insight:
-javascript// With UDP, you'd need to implement reliability yourself
+---
+
+### Scenario 3: File Download
+
+**Network Conditions:** Stable connection, 1% packet loss
+
+**Why TCP Wins:**
+- File integrity is critical (missing 1% means corrupted file)
+- No time sensitivity (few seconds delay acceptable)
+- TCP automatically handles retransmissions
+
+**Developer Insight:**
+
+```javascript
+// With UDP, you'd need to implement reliability yourself
 class UDPFileTransfer {
   // Need to implement:
   // 1. Packet sequencing
@@ -73,32 +111,36 @@ https.get('https://example.com/file.zip', (res) => {
   // All reliability handled by TCP
   res.pipe(fileStream);
 });
-Performance Overhead Breakdown
-TCP Overhead:
+```
 
-Three-way handshake: 1.5 RTT (Round Trip Time) before data transfer
-ACK for every packet or group: 50% additional packets
-Header size: 20-60 bytes per packet
-Congestion control calculations: CPU overhead
-Send/receive buffers: Memory overhead
+---
 
-UDP Overhead:
+## Performance Overhead Breakdown
 
-No handshake: 0 RTT, immediate data transfer
-No acknowledgments: 0 additional packets
-Header size: 8 bytes per packet (75% smaller)
-No state management: Minimal CPU
-No buffers needed: Minimal memory
+### TCP Overhead:
+- **Three-way handshake:** 1.5 RTT (Round Trip Time) before data transfer
+- **ACK for every packet or group:** 50% additional packets
+- **Header size:** 20-60 bytes per packet
+- **Congestion control calculations:** CPU overhead
+- **Send/receive buffers:** Memory overhead
 
-Practical Example:
-Sending 1000 bytes of data:
+### UDP Overhead:
+- **No handshake:** 0 RTT, immediate data transfer
+- **No acknowledgments:** 0 additional packets
+- **Header size:** 8 bytes per packet (75% smaller)
+- **No state management:** Minimal CPU
+- **No buffers needed:** Minimal memory
 
-TCP:
+---
+
+## Practical Example: Sending 1000 Bytes of Data
+
+### TCP:
 - Handshake: 3 packets (SYN, SYN-ACK, ACK)
 - Data packet: 1000 bytes + 20 byte header
 - ACK response: 40 byte packet
-Total: 5 packets, ~1060 bytes + handshake overhead
+- **Total:** 5 packets, ~1060 bytes + handshake overhead
 
-UDP:
+### UDP:
 - Data packet: 1000 bytes + 8 byte header
-Total: 1 packet, 1008 bytes
+- **Total:** 1 packet, 1008 bytes
