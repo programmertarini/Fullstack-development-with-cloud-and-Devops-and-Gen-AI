@@ -1,0 +1,298 @@
+# Network Communication - Comprehensive Study Notes
+
+## 1. Network Communication Basics
+
+**Network**: Two or more computers connected via LAN cable sharing data with the help of Network Interface Card (NIC).
+
+**Communication**: The process where computers send or receive data through a LAN cable or other transmission medium.
+
+---
+
+## 2. Physical Layer
+
+The Physical Layer deals with the actual transmission of raw bits over a physical medium.
+
+### Signal Types and Media
+- **Electrical Signal** → Copper cable/LAN cable
+- **Light Signal** → Optical fiber cable
+- **Radio Wave Signal** → Air or vacuum (wireless)
+
+### Common Protocols and Cable Types
+
+**Ethernet Protocol** uses:
+- Twisted pair cable
+- Coaxial cable
+- Fiber optic cable
+
+**Fast Ethernet/Gigabit Ethernet** uses:
+- Twisted pair cable
+- Fiber optic cable
+
+### Additional Physical Layer Concepts
+- **Data Rate**: Measured in bits per second (bps)
+- **Bandwidth**: The maximum data transfer rate
+- **Transmission Modes**: Simplex, Half-duplex, Full-duplex
+- **Network Topologies**: Bus, Star, Ring, Mesh
+
+---
+
+## 3. Data Link Layer
+
+**Data Unit**: Ethernet Frame
+
+The Data Link Layer is divided into two sublayers:
+
+### 3.1 MAC Sublayer (Media Access Control)
+
+**Responsibilities**:
+- Data encapsulation
+- Media access control
+
+**MAC Address**: A unique 6-byte (48-bit) address embedded in the NIC by the manufacturer for identifying devices on a network.
+
+**Frame Structure**:
+- **Header**: Contains MAC addresses of sender and receiver
+- **Data**: Payload from Network Layer
+- **Trailer**: Contains 4 bytes of error checking data (CRC - Cyclic Redundancy Check)
+
+**Access Method**: 
+- **CSMA/CD (Carrier Sense Multiple Access with Collision Detection)**
+  - Listens before transmitting
+  - Detects collisions during transmission
+  - Retransmits after random backoff time if collision occurs
+
+### 3.2 LLC Sublayer (Logical Link Control)
+
+**Functions**:
+
+1. **Flow Control**: Restricts the amount of data a sender can transmit without overwhelming the receiver
+   - Prevents buffer overflow at receiver
+   - Uses techniques like sliding window protocol
+
+2. **Error Control**: 
+   - **Error Detection**: Checks error-checking data in the trailer
+   - **Retransmission**: Uses Automatic Repeat Request (ARQ) to request retransmission of corrupted frames
+
+3. **Frame Resizing**: Adjusts IP packets received from the Network Layer to fit within Data Link Layer frame size limits
+
+---
+
+## 4. Network Layer
+
+**Data Unit**: IP Packet
+
+**Primary Function**: Assigns IP addresses to TCP segments or UDP datagrams
+
+### Key Functions
+
+#### 4.1 Logical Addressing
+- Assigns sender IP and receiver IP addresses
+- Ensures each IP packet reaches the correct destination across different networks
+- Uses IPv4 (32-bit) or IPv6 (128-bit) addressing schemes
+
+#### 4.2 Routing
+
+**Same Network Communication**:
+- Routing is NOT required
+- ARP (Address Resolution Protocol) takes destination IP and returns destination MAC address
+- Ethernet frame is created and delivered directly to destination
+
+**Different Network Communication**:
+- Router is required for transmission
+- Process:
+  1. ARP cannot find destination MAC (different network)
+  2. Router's MAC address is used as destination
+  3. Frame is forwarded to router
+  4. Router extracts IP packet and forwards to Network Layer
+  5. Network Layer detects destination is in different network
+  6. Router uses ARP to find destination MAC (router and destination are in same network)
+  7. New Ethernet frame created with correct destination MAC
+  8. Frame delivered to final destination
+
+#### 4.3 Path Determination
+
+**Definition**: Choosing the best path for data transmission
+
+**Routing Algorithms**:
+- **OSPF** (Open Shortest Path First): Link-state routing protocol for IP networks
+- **BGP** (Border Gateway Protocol): Inter-domain routing protocol for the Internet
+- **IS-IS** (Intermediate System to Intermediate System): Link-state protocol for large networks
+- **RIP** (Routing Information Protocol): Distance-vector protocol
+- **EIGRP** (Enhanced Interior Gateway Routing Protocol): Advanced distance-vector protocol
+
+---
+
+## 5. Transport Layer
+
+**Protocols**: TCP (Transmission Control Protocol) and UDP (User Datagram Protocol)
+
+### 5.1 TCP vs UDP
+
+**TCP (Connection-Oriented)**:
+- Supports segmentation for large data
+- Breaks data into multiple packets/segments
+- Reliable, ordered delivery
+- Error checking and correction
+- Slower but ensures data integrity
+
+**UDP (Connectionless)**:
+- Tries to fit data in single unit
+- Lacks error checking and correction
+- Fast and efficient
+- Used for real-time applications (video streaming, gaming, VoIP)
+- No guarantee of delivery or order
+
+### 5.2 TCP Data Transmission Phases
+
+#### Phase 1: Connection Establishment (3-Way Handshake)
+1. **SYN**: Sender TCP sends synchronization segment to receiver
+2. **SYN-ACK**: Receiver TCP sends acknowledgment back to sender
+3. **ACK**: Sender TCP sends final acknowledgment to receiver
+   - Connection is now established
+
+#### Phase 2: Data Transfer
+
+TCP provides five key features during data transfer:
+
+**1. Error-Free Data Transfer**
+- **Checksum Mechanism**:
+  - Every TCP segment includes a checksum field calculated from header and data
+  - Receiver recalculates checksum upon receipt
+  - If checksums don't match, segment is corrupted and discarded
+  - Protects against bit errors from electrical interference, faulty hardware, or radio interference
+- **Acknowledgment System**: Receiver sends ACK for successfully received segments
+
+**2. Ordered Data Transfer**
+- **Sequence Numbers**: Each byte of data is assigned a unique sequence number
+- **How it Works**:
+  - TCP assigns sequence numbers to each segment
+  - Receiver uses sequence numbers to reassemble data in correct order
+  - If segments arrive out of order, receiver buffers them until missing segments arrive
+  - Once all segments received, data is passed to Application Layer in correct sequence
+- **Example**: If segments arrive as 3, 1, 4, 2, TCP reorders them to 1, 2, 3, 4
+
+**3. Retransmission of Lost Data**
+- **Timeout Mechanism**:
+  - Sender starts a timer when sending each segment
+  - If ACK not received before timeout, segment is retransmitted
+  - Timeout value is dynamically calculated based on network conditions (RTT - Round Trip Time)
+- **Selective Acknowledgment (SACK)**:
+  - Receiver can acknowledge non-contiguous blocks of data
+  - Sender only retransmits missing segments, not entire window
+  - Improves efficiency over traditional cumulative ACKs
+- **Fast Retransmit**: If sender receives 3 duplicate ACKs for same segment, it immediately retransmits without waiting for timeout
+
+**4. Discarding Duplicate Packets**
+- **Problem**: Network may deliver same packet multiple times due to unnecessary retransmissions
+- **Solution**:
+  - Receiver uses sequence numbers to identify duplicates
+  - When duplicate segment detected (same sequence number), receiver discards it
+  - Only unique segments are passed to Application Layer
+  - Receiver still sends ACK for duplicate to inform sender
+- **Prevents**: Data corruption and application errors from processing same data twice
+
+**5. Congestion Throttling (Congestion Control)**
+- **Purpose**: Prevents network congestion and ensures fair bandwidth usage
+- **Mechanisms**:
+  - **Slow Start**: Begins with small congestion window, increases exponentially until threshold reached
+  - **Congestion Avoidance**: After threshold, window increases linearly
+  - **Fast Recovery**: When packet loss detected (via duplicate ACKs), reduces window size but not to minimum
+- **Congestion Window**: Limits amount of unacknowledged data sender can transmit
+- **Flow Control vs Congestion Control**:
+  - Flow Control: Protects receiver from overflow (receiver window)
+  - Congestion Control: Protects network from congestion (congestion window)
+- **Algorithms**: TCP Reno, TCP Tahoe, TCP CUBIC, TCP BBR
+
+#### Phase 3: Connection Termination (4-Way Handshake)
+1. **FIN**: Sender sends FIN flag to close connection
+2. **ACK**: Receiver acknowledges FIN
+3. **FIN**: Receiver sends its own FIN
+4. **ACK**: Sender acknowledges receiver's FIN
+   - Connection is now closed
+
+---
+
+## 6. Application Layer
+
+The Application Layer provides network services directly to end-users and applications.
+
+### Application Layer Protocols
+
+**1. DNS (Domain Name System)**
+- Translates human-readable domain names (e.g., www.example.com) to IP addresses
+
+**2. DHCP (Dynamic Host Configuration Protocol)**
+- Automatically assigns IP addresses and network configuration to devices on a network
+
+**3. FTP (File Transfer Protocol)**
+- Enables file transfer between client and server over a network
+
+**4. HTTP (Hypertext Transfer Protocol)**
+- Protocol for transmitting web pages and other data on the World Wide Web
+
+**5. HTTPS (HTTP Secure)**
+- Secure version of HTTP using SSL/TLS encryption for secure communication
+
+**6. IMAP (Internet Message Access Protocol)**
+- Allows email clients to retrieve and manage emails stored on a mail server
+
+**7. IRC (Internet Relay Chat)**
+- Real-time text messaging protocol for group communication in channels
+
+**8. POP3 (Post Office Protocol version 3)**
+- Downloads emails from mail server to local client and typically deletes them from server
+
+**9. SMTP (Simple Mail Transfer Protocol)**
+- Protocol for sending emails from client to server or between mail servers
+
+**10. SSH (Secure Shell)**
+- Provides secure encrypted communication for remote login and command execution
+
+**11. Telnet**
+- Protocol for remote terminal access (unencrypted, largely replaced by SSH)
+
+**12. SNMP (Simple Network Management Protocol)**
+- Monitors and manages network devices like routers, switches, and servers
+
+---
+
+## 7. OSI Model Summary
+
+| Layer | Data Unit | Key Protocols | Main Function |
+|-------|-----------|---------------|---------------|
+| 7. Application | Data | HTTP, FTP, SMTP, DNS | User interface and network services |
+| 6. Presentation | Data | SSL/TLS, JPEG, MPEG | Data formatting, encryption, compression |
+| 5. Session | Data | NetBIOS, PPTP | Establishes and manages connections |
+| 4. Transport | Segment/Datagram | TCP, UDP | Reliable data transfer, segmentation |
+| 3. Network | Packet | IP, ICMP, IGMP, ARP | Logical addressing and routing |
+| 2. Data Link | Frame | Ethernet, PPP, MAC | Physical addressing, error detection |
+| 1. Physical | Bits | Ethernet, USB, Bluetooth | Transmission of raw bits |
+
+---
+
+## 8. Additional Important Concepts
+
+### ARP (Address Resolution Protocol)
+- Maps IP addresses to MAC addresses
+- Used when devices need to communicate within same network
+- Maintains ARP cache for faster lookups
+
+### Subnetting
+- Divides large network into smaller subnetworks
+- Improves network performance and security
+- Uses subnet masks to determine network and host portions
+
+### NAT (Network Address Translation)
+- Translates private IP addresses to public IP addresses
+- Allows multiple devices to share single public IP
+- Provides additional security layer
+
+### Firewall
+- Network security device that monitors and filters traffic
+- Can be hardware or software-based
+- Uses rules to allow or block traffic
+
+### VPN (Virtual Private Network)
+- Creates secure, encrypted connection over public network
+- Protects data privacy and security
+- Allows remote access to private networks
